@@ -1,0 +1,91 @@
+\documentclass[10pt,reqno,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+
+\usepackage{fixltx2e}
+\usepackage{microtype}
+\usepackage[letterpaper,hmargin=1in,vmargin=1in]{geometry}
+\usepackage[brazil]{babel}
+\usepackage{indentfirst}
+\usepackage{amssymb}
+\usepackage{mathtools}          % already includes amsmath
+\usepackage{amsthm}
+\usepackage{bbm}
+\usepackage{graphicx}
+\usepackage{enumerate}
+\usepackage{ifthen}
+\usepackage{color}
+\usepackage[colorinlistoftodos]{todonotes}
+\usepackage{algpseudocode}
+\usepackage{verbatim}
+
+\title{Geometria Computacional: Lista 1}
+\author{Nathan Benedetto Proença}
+\date{20 de agosto de 2018}
+
+\newcommand{\tdots}{\,.\,.\,} % in place of \ldots
+\DeclarePairedDelimiter{\abs}{\lvert}{\rvert}
+\DeclarePairedDelimiter{\norm}{\lVert}{\rVert}
+\DeclarePairedDelimiter\curly{\{}{\}}
+\DeclarePairedDelimiter\paren{(}{)}
+\DeclareMathOperator{\Lip}{Lip}
+\newcommand{\eps}{\varepsilon}
+\newcommand{\isdef}{\coloneqq}
+\newcommand{\C}{\mathcal{C}}
+\newcommand*{\Reals}{\mathbb{R}}
+\newcommand*{\Naturals}{\mathbb{N}}
+\begin{document}
+\maketitle
+
+\section*{Exercício 2}
+Sendo sincero, eu não entendi exatamente o que o professor Sperto ganhou,
+mesmo desconsiderando o erro que ele cometeu. De qualquer maneira, o maior
+problema com esta abordagem é que ela abre mão das vantagens da técnica de
+divisão e conquista. No melhor caso, torna o algoritmo $O(n^2)$, e no
+pior pode fazer com que ele não termine.
+
+Para ver que este é o caso, basta pensar no caso onde todos os pontos estão
+na mesma reta. Se, como descrito no enunciado, todos forem para o conjunto E,
+então teremos que $\abs{E} = n$. Assim, na próxima iteração teremos a mesma
+entrada, o que irá causar um laço infinito. Se o algoritmo deixar um ponto no
+conjunto $D$, seu comportamento será quadrático.
+
+\section*{Exercício 4}
+
+A ideia é relativamente simples. Suponho que os pontos $E$, da esquerda,
+e os pontos $D$, da direita, estão ordenados por $Y$. Irei processar
+os pontos de $E$ em ordem crescente de $Y$. Quando um ponto de $D$ tiver uma
+coordenada $Y$ tão pequena ao ponto dele não ser comparado com o ponto de $E$
+que estou processando, posso garantir que ele não precisará ser comparado com
+nenhum outro ponto de $E$ ainda não processado --- pois todos estes tem coordenada
+$Y$ maior. Assim, posso descartar ele. Desta maneira, consigo encontrar o começo
+do intervalo dos pontos com os quais irei comparar meu ponto em tempo $O(1)$
+amortizado, o que torna o algoritmo linear.
+
+Escrevi o algoritmo em inglês por não conseguir traduzir a biblioteca do
+\LaTeX \; para português.
+\\
+
+\begin{algorithmic}
+\Require $D$ and $E$ are sorted in non-decreasing order by $Y$.
+\Require $\eps$ is the minimum between the smallest distance found in $D$
+and the smallest distance found in $E$.
+\Require $n$ is the size of $D$, and $m$ is the size of $E$.
+\Require $D$ and $E$ have already been filtered for points with $X$ coordinate
+too far.
+\Function{Combine}{$X, Y, E, n, D, m, \eps$}
+    \State $i \gets 1$
+    \For{from $k \gets 1$ to $n$}
+        \While{$i \leq m$ and $\eps < Y[E[k]] - Y[D[i]]$}
+            \State $i \gets i + 1$
+        \EndWhile
+
+        \State $j \gets i$
+        \While{$j \leq m$ and $\abs{Y[D[j]] - Y[E[k]]} < \eps$}
+                \State $\eps \gets \min (\eps, \texttt{Dist}(E[k], D[j]))$
+        \EndWhile
+    \EndFor\\
+    \Return $\eps$
+\EndFunction
+\end{algorithmic}
+\end{document}
