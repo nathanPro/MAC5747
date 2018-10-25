@@ -1,1 +1,1 @@
-CXXFLAGS = --std=c++11 --pedantic -Wall -Wextra -g -fno-omit-frame-pointer
+CXXFLAGS = --std=c++14 --pedantic -Wall -Wextra -g -fno-omit-frame-pointer
