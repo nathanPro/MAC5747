@@ -28,10 +28,10 @@ template <typename It> struct RangeLog {
 
 template <typename T> using point = std::complex<T>;
 
-template <typename T> bool lex_compare(point<T> a, point<T> b) {
+auto lex_compare = [](const auto& a, const auto& b) {
     return std::imag(a) == std::imag(b) ? std::real(a) < std::real(b)
                                         : std::imag(a) < std::imag(b);
-}
+};
 
 template <typename T> T cross(point<T> a, point<T> b) {
     return std::imag(std::conj(a) * b);
@@ -43,7 +43,7 @@ template <typename T> T area(point<T> a, point<T> b, point<T> c) {
 
 template <typename T> auto area_compare(point<T> p, point<T> q) {
     return [=](const point<T>& a, const point<T>& b) {
-        return abs(area(p, q, a)) < abs(area(p, q, b));
+        return area(p, q, a) < area(p, q, b);
     };
 }
 
@@ -51,9 +51,13 @@ template <typename T> auto left(point<T> p, point<T> q) {
     return [=](const point<T>& a) { return area(p, q, a) > 0; };
 }
 
-template <typename It> std::pair<It, It> partition(It fst, It lst) {
-    using pt = typename std::iterator_traits<It>::value_type;
+template <typename T> auto left(point<T> p) {
+    return [=](const point<T>& a, const point<T>& b) {
+        return area(p, a, b) < 0;
+    };
+}
 
+template <typename It> std::pair<It, It> partition(It fst, It lst) {
     const It p = fst++;
     const It r = --lst;
     std::iter_swap(fst, std::max_element(fst, lst, area_compare(*p, *r)));
@@ -79,15 +83,9 @@ template <typename It> It _qhull(It fst, It lst) {
 template <typename It> It quick_hull(It fst, It lst) {
     using pt = typename std::iterator_traits<It>::value_type;
 
-    std::iter_swap(
-        fst, std::min_element(fst, lst, [&](const pt& a, const pt& b) {
-            return lex_compare(a, b);
-        }));
+    std::iter_swap(fst, std::min_element(fst, lst, lex_compare));
     std::iter_swap(std::prev(lst),
-                   std::max_element(std::next(fst), lst,
-                                    [&](const pt& a, const pt& b) {
-                                        return area(*fst, a, b) < 0;
-                                    }));
+                   std::max_element(std::next(fst), lst, left(*fst)));
     return _qhull(fst, lst);
 }
 
