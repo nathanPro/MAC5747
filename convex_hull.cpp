@@ -26,9 +26,9 @@ template <typename T> auto area_compare(point<T> p, point<T> q) {
 
 template <typename T> auto angle(point<T> p) {
     return [p](const point<T>& a, const point<T>& b) {
-        if (a == p) return true;
-        if (b == p) return false;
-        return area(p, a, b) < 0;
+        if (a == p) return false;
+        if (b == p) return true;
+        return area(p, a, b) > 0;
     };
 }
 
@@ -66,7 +66,7 @@ template <typename It> It quick_hull(It fst, It lst) {
     if (distance(fst, lst) <= 2) return lst;
     std::iter_swap(fst, std::min_element(fst, lst, lex_compare));
     std::iter_swap(std::prev(lst),
-                   std::min_element(std::next(fst), lst, angle(*fst)));
+                   std::max_element(std::next(fst), lst, angle(*fst)));
     return __detail::qhull(fst, lst);
 }
 
@@ -75,8 +75,8 @@ template <typename It> It gift_wrapping(It fst, It lst) {
     std::iter_swap(fst, std::min_element(fst, lst, lex_compare));
 
     It out = fst;
-    for (It nxt = std::max_element(fst, lst, angle(*out)); nxt != fst;
-         nxt    = std::max_element(fst, lst, angle(*out)))
+    for (It nxt = std::min_element(fst, lst, angle(*out)); nxt != fst;
+         nxt    = std::min_element(fst, lst, angle(*out)))
         std::iter_swap(++out, nxt);
     return ++out;
 }
@@ -84,12 +84,12 @@ template <typename It> It gift_wrapping(It fst, It lst) {
 template <typename It> It graham(It fst, It lst) {
     if (distance(fst, lst) <= 2) return lst;
     std::iter_swap(fst, std::min_element(fst, lst, lex_compare));
-    std::sort(fst, lst, angle(*fst));
+    std::sort(std::next(fst), lst, angle(*fst));
 
     size_t hull_size = 1;
     It     out       = fst;
     for (auto i = std::next(fst); i != lst; ++i) {
-        while (hull_size > 1 && !left(*std::prev(out), *i)(*out))
+        while (hull_size > 1 && !left(*std::prev(out), *out)(*i))
             --out, --hull_size;
         std::iter_swap(++out, i);
         hull_size++;
