@@ -60,33 +60,30 @@ template <typename T> auto left(point<T> p) {
 template <typename It> std::pair<It, It> partition(It fst, It lst) {
     const It p = fst++;
     const It r = --lst;
-    std::iter_swap(fst, std::max_element(fst, lst, area_compare(*p, *r)));
+    std::iter_swap(fst, std::max_element(fst, lst, area_compare(*r, *p)));
     const It q = fst++;
 
-    fst = std::partition(fst, lst, left(*p, *q));
-    lst = std::partition(fst, lst, left(*q, *r));
+    fst = std::partition(fst, lst, left(*q, *p));
+    lst = std::partition(fst, lst, left(*r, *q));
     std::iter_swap(lst++, r);
     std::iter_swap(--fst, q);
 
     return {fst, lst};
 }
 
-template <typename It> It _qhull(It fst, It lst) {
+template <typename It> It qhull(It fst, It lst) {
     if (distance(fst, lst) <= 3) return lst;
     It mid;
     std::tie(mid, lst) = partition(fst, lst);
-
-    It lhs = _qhull(fst, std::next(mid));
-    return _qhull(mid, std::rotate(lhs, std::next(mid), lst));
+    lst                = qhull(mid, lst);
+    return std::rotate(qhull(fst, std::next(mid)), std::next(mid), lst);
 }
 
 template <typename It> It quick_hull(It fst, It lst) {
-    using pt = typename std::iterator_traits<It>::value_type;
-
     std::iter_swap(fst, std::min_element(fst, lst, lex_compare));
     std::iter_swap(std::prev(lst),
-                   std::max_element(std::next(fst), lst, left(*fst)));
-    return _qhull(fst, lst);
+                   std::min_element(std::next(fst), lst, left(*fst)));
+    return qhull(fst, lst);
 }
 
 } // namespace gc
