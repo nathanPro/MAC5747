@@ -5,26 +5,56 @@
 #include <tuple>
 #include <vector>
 
+namespace order {
+
+template <typename Callable> auto dual(Callable&& f) {
+    return [=](const auto& a, const auto& b) { return f(b, a); };
+}
+
+template <typename Callable> auto compose(Callable&& f) { return f; }
+
+template <typename Callable, typename... Args>
+auto compose(Callable&& f, Args... args) {
+    return [=](const auto& a, const auto& b) {
+        if (f(a, b)) return true;
+        if (f(b, a)) return false;
+        return compose(args...)(a, b);
+    };
+}
+
+} // namespace order
+
 namespace geo {
 
 template <typename T> using point = std::complex<T>;
-
-auto lex_compare = [](const auto& a, const auto& b) {
-    return std::imag(a) == std::imag(b) ? std::real(a) < std::real(b)
-                                        : std::imag(a) < std::imag(b);
-};
 
 template <typename T> T area(point<T> a, point<T> b, point<T> c) {
     return std::imag(std::conj(b - a) * (c - a));
 }
 
-template <typename T> auto area_compare(point<T> p, point<T> q) {
+const auto by_x = [](const auto& a, const auto& b) {
+    return std::real(a) < std::real(b);
+};
+
+const auto by_y = [](const auto& a, const auto& b) {
+    return std::imag(a) < std::imag(b);
+};
+
+const auto by_lex = order::compose(by_y, by_x);
+
+template <typename T> auto by_distance(point<T> p) {
+    return [p](const point<T>& a, const point<T>& b) {
+        return std::norm(a - p) < std::norm(b - p);
+    };
+}
+
+template <typename T> auto by_area(point<T> p, point<T> q) {
     return [p, q](const point<T>& a, const point<T>& b) {
         return area(p, q, a) < area(p, q, b);
     };
 }
 
-template <typename T> auto angle(point<T> p) {
+template <typename T> auto by_angle(point<T> p) {
     return [p](const point<T>& a, const point<T>& b) {
         if (a == p) return false;
         if (b == p) return true;
@@ -42,7 +72,10 @@ template <typename It> std::pair<It, It> partition(It fst, It lst) {
     const It p = fst++;
     const It q = fst++;
     const It r = --lst;
-    std::iter_swap(q, std::max_element(fst, lst, area_compare(*r, *p)));
+
+    std::iter_swap(
+        q, std::max_element(fst, lst,
+                            order::compose(by_area(*r, *p), by_lex)));
 
     fst = std::partition(fst, lst, left(*q, *p));
     lst = std::partition(fst, lst, left(*r, *q));
@@ -64,27 +97,35 @@ template <typename It> It qhull(It fst, It lst) {
 
 template <typename It> It quick_hull(It fst, It lst) {
     if (distance(fst, lst) <= 2) return lst;
-    std::iter_swap(fst, std::min_element(fst, lst, lex_compare));
+    std::iter_swap(fst, std::min_element(fst, lst, by_lex));
     std::iter_swap(std::prev(lst),
-                   std::max_element(std::next(fst), lst, angle(*fst)));
+                   std::max_element(
+                       std::next(fst), lst,
+                       order::compose(by_angle(*fst), by_distance(*fst))));
     return __detail::qhull(fst, lst);
 }
 
 template <typename It> It gift_wrapping(It fst, It lst) {
     if (distance(fst, lst) <= 2) return lst;
-    std::iter_swap(fst, std::min_element(fst, lst, lex_compare));
+    std::iter_swap(fst, std::min_element(fst, lst, by_lex));
 
     It out = fst;
-    for (It nxt = std::min_element(fst, lst, angle(*out)); nxt != fst;
-         nxt    = std::min_element(fst, lst, angle(*out)))
+
+    const auto criteria = [](const auto& p) {
+        return order::compose(by_angle(p), order::dual(by_distance(p)));
+    };
+
+    for (It nxt = std::min_element(fst, lst, criteria(*out)); nxt != fst;
+         nxt    = std::min_element(fst, lst, criteria(*out)))
         std::iter_swap(++out, nxt);
     return ++out;
 }
 
 template <typename It> It graham(It fst, It lst) {
     if (distance(fst, lst) <= 2) return lst;
-    std::iter_swap(fst, std::min_element(fst, lst, lex_compare));
-    std::sort(std::next(fst), lst, angle(*fst));
+    std::iter_swap(fst, std::min_element(fst, lst, by_lex));
+    std::sort(std::next(fst), lst,
+              order::compose(by_angle(*fst), by_distance(*fst)));
 
     size_t hull_size = 1;
     It     out       = fst;
@@ -94,6 +135,8 @@ template <typename It> It graham(It fst, It lst) {
         std::iter_swap(++out, i);
         hull_size++;
     }
+    while (hull_size > 2 && !left(*std::prev(out), *out)(*fst))
+        --out, --hull_size;
     return ++out;
 }
 
