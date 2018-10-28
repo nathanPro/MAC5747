@@ -7,15 +7,23 @@
 
 namespace order {
 
+template <typename T> auto from_sup(T sup) {
+    return [sup](const T&, const T& b) { return (b == sup); };
+}
+
+template <typename T> auto from_inf(T inf) {
+    return [inf](const T& a, const T&) { return (a == inf); };
+}
+
 template <typename Callable> auto dual(Callable&& f) {
-    return [=](const auto& a, const auto& b) { return f(b, a); };
+    return [f](const auto& a, const auto& b) { return f(b, a); };
 }
 
 template <typename Callable> auto compose(Callable&& f) { return f; }
 
 template <typename Callable, typename... Args>
 auto compose(Callable&& f, Args... args) {
-    return [=](const auto& a, const auto& b) {
+    return [f, args...](const auto& a, const auto& b) {
         if (f(a, b)) return true;
         if (f(b, a)) return false;
         return compose(args...)(a, b);
@@ -56,8 +64,6 @@ template <typename T> auto by_area(point<T> p, point<T> q) {
 
 template <typename T> auto by_angle(point<T> p) {
     return [p](const point<T>& a, const point<T>& b) {
-        if (a == p) return false;
-        if (b == p) return true;
         return area(p, a, b) > 0;
     };
 }
@@ -112,7 +118,8 @@ template <typename It> It gift_wrapping(It fst, It lst) {
     It out = fst;
 
     const auto criteria = [](const auto& p) {
-        return order::compose(by_angle(p), order::dual(by_distance(p)));
+        return order::compose(order::from_sup(p), by_angle(p),
+                              order::dual(by_distance(p)));
     };
 
     for (It nxt = std::min_element(fst, lst, criteria(*out)); nxt != fst;
