@@ -51,15 +51,13 @@ const auto by_y   = order::from_proj(y);
 const auto by_lex = order::compose(by_y, by_x);
 
 template <typename T> auto by_distance(point<T> p) {
-    return [p](const point<T>& a, const point<T>& b) {
-        return std::norm(a - p) < std::norm(b - p);
-    };
+    return order::from_proj(
+        [p](const point<T>& a) { return std::norm(a - p); });
 }
 
 template <typename T> auto by_area(point<T> p, point<T> q) {
-    return [p, q](const point<T>& a, const point<T>& b) {
-        return area(p, q, a) < area(p, q, b);
-    };
+    return order::from_proj(
+        [p, q](const point<T>& a) { return area(p, q, a); });
 }
 
 template <typename T> auto by_angle(point<T> p) {
