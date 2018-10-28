@@ -15,6 +15,10 @@ template <typename T> auto from_inf(T inf) {
     return [inf](const T& a, const T&) { return (a == inf); };
 }
 
+template <typename Callable> auto from_proj(Callable&& f) {
+    return [f](const auto& a, const auto& b) { return f(a) < f(b); };
+}
+
 template <typename Callable> auto dual(Callable&& f) {
     return [f](const auto& a, const auto& b) { return f(b, a); };
 }
@@ -40,14 +44,10 @@ template <typename T> T area(point<T> a, point<T> b, point<T> c) {
     return std::imag(std::conj(b - a) * (c - a));
 }
 
-const auto by_x = [](const auto& a, const auto& b) {
-    return std::real(a) < std::real(b);
-};
-
-const auto by_y = [](const auto& a, const auto& b) {
-    return std::imag(a) < std::imag(b);
-};
-
+const auto x      = [](const auto& a) { return std::real(a); };
+const auto y      = [](const auto& a) { return std::imag(a); };
+const auto by_x   = order::from_proj(x);
+const auto by_y   = order::from_proj(y);
 const auto by_lex = order::compose(by_y, by_x);
 
 template <typename T> auto by_distance(point<T> p) {
