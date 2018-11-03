@@ -9,7 +9,8 @@ int main() {
     std::uniform_int_distribution<int> dist(-1e4, 1e4);
 
     {
-        geo::e_point<int> a{0, 2}, b{1, 2}, c{1, 1}, inf_c{{1, 1}, true};
+        geo::e_point<int> a{0, 2}, b{1, 2}, c{1, 1},
+            inf_c{{1, 1}, true};
         assert(!geo::left(a, b)(c));
         assert(geo::left(a, b)(inf_c));
     }
@@ -20,7 +21,8 @@ int main() {
     std::vector<geo::e_point<int>> Q(m);
 
     for (int i = 0; i < n; i++) {
-        for (int j = 0; j < m; j++) Q[j] = P[j] = {dist(src), dist(src)};
+        for (int j = 0; j < m; j++)
+            Q[j] = P[j] = {dist(src), dist(src)};
 
         for (int j = 0; j < m; j++)
             for (int k = 0; k < m; k++)
@@ -42,5 +44,22 @@ int main() {
         for (int j = 0; j < m; j++) assert(cmp(P[j]) == tst(P[j]));
 
         printf("%d passed\n", i);
+    }
+    {
+        using dag_t = geo::dag_t<int>;
+        using pt_t  = geo::e_point<int>;
+        dag_t division{};
+        division.insert({0, 0});
+        division.insert({2, 0});
+        division.insert({2, 2});
+
+        int n;
+        scanf(" %d", &n);
+        while (n--) {
+            int x, y;
+            scanf(" %d%d", &x, &y);
+            auto it = division.find(pt_t{x, y});
+            std::cout << *it << std::endl;
+        }
     }
 }
