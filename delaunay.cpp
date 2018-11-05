@@ -67,4 +67,13 @@ int main() {
             std::cout << *it << std::endl;
         }
     }
+    {
+        std::cout << geo::det<int>({0, 1, 1, 0}) << std::endl;
+        std::cout << geo::det(std::array<int, 9>{1, 0, 0, 0, 2, 0, 0,
+                                                 0, 1})
+                  << std::endl;
+        std::cout << geo::det(std::array<int, 9>{1, 2, 3, 4, 5, 6, 7,
+                                                 8, 7})
+                  << std::endl;
+    }
 }

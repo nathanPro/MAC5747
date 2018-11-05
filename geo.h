@@ -158,4 +158,31 @@ template <typename N> class dag_t {
     tri_t root;
 };
 
+template <typename N, size_t d> N det(std::array<N, d> A);
+
+template <typename N> N det(std::array<N, 4> A) {
+    for (int i = 0; i < 4; i++) std::cout << A[i] << " ";
+    std::cout << ": ";
+    std::cout << A[0] * A[3] - A[1] * A[2] << std::endl;
+    return A[0] * A[3] - A[1] * A[2];
+}
+
+template <typename N, size_t sz> N det(std::array<N, sz> A) {
+    N ans{0};
+    N sgn{1};
+
+    static const size_t                       d = sqrt(sz);
+    static std::array<N, (d - 1u) * (d - 1u)> B;
+
+    for (size_t k = 0; k < d; k++) {
+        int bs = 0;
+        for (size_t i = 0; i < d; i++)
+            for (size_t j = 0; j < d; j++)
+                if (i != 0 && j != k) B[bs++] = A[i * d + j];
+        ans = ans + sgn * A[k] * det(B);
+        sgn = N{-1} * sgn;
+    }
+    return ans;
+}
+
 } // namespace geo
