@@ -49,16 +49,21 @@ int main() {
         using dag_t = geo::dag_t<int>;
         using pt_t  = geo::e_point<int>;
         dag_t division{};
-        division.insert({0, 0});
-        division.insert({2, 0});
-        division.insert({2, 2});
-
-        int n;
+        int   n;
         scanf(" %d", &n);
         while (n--) {
             int x, y;
             scanf(" %d%d", &x, &y);
-            auto it = division.find(pt_t{x, y});
+            division.insert({x, y});
+        }
+
+        scanf(" %d", &n);
+        while (n--) {
+            int x, y;
+            scanf(" %d%d", &x, &y);
+            pt_t q  = {x, y};
+            auto it = division.find(q);
+            std::cout << q << ": ";
             std::cout << *it << std::endl;
         }
     }
