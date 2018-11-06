@@ -47,9 +47,7 @@ class DAG:
     def leaf(T):
         return T.C is None
 
-    def split_triangle(T, p):
-        assert DAG.leaf(T)
-
+    def interior_split(T, p):
         ans = []
         aux = [p, T.P[1], T.P[2]]
         for i in range(3):
@@ -69,6 +67,17 @@ class DAG:
                 aux[i + 1] = T.A[i + 1]
 
         T.C = ans
+
+    def edge_split(T, i, U, j, p):
+        pass
+
+    def split_triangle(T, p):
+        assert DAG.leaf(T)
+        for i, U in enumerate(T.A):
+            if U is not None and U.contains(p):
+                DAG.edge_split(T, i, U, U.A.index(T), p)
+                return
+        DAG.interior_split(T, p)
 
     def __init__(self):
         self.root = Triangle(promote(Point(-1, -1), True),
