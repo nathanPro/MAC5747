@@ -8,22 +8,21 @@ def area2(a, b):
 def norm(a):
     return a.x * a.x + a.y * a.y
 
-def e_area(a, b, c):
+def e_area2(points):
     p = [0] * 3
-    points = [a, b, c]
     for i in range(3):
         rank = points[i - 1].inf + points[i].inf
         p[rank] += area2(points[i - 1].inner, points[i].inner)
     return p
 
-def e_volume(a, b, c, d):
-    Q = [a, b, c, d]
+def e_incircle6(Q):
     p = [0] * 5
     sgn = 1;
     for i in range(4):
-        aux = [Q[k] for k in range(4) if k != i]
-        for j, val in enumerate(e_area(Q[0], Q[1], Q[2])):
-            p[2 * Q[i].inf + j] += sgn * norm(Q[i].inner) * val 
+        coef = sgn * norm(Q[i].inner)
+        disp = 2 * Q[i].inf
+        for j, val in enumerate(e_area2([Q[k] for k in range(4) if k != i])):
+            p[disp + j] += coef * val 
         sgn *= -1
     return p
 
@@ -37,7 +36,7 @@ def left(a, b):
     b = promote(b)
 
     def inner(c):
-        p = e_area(a, b, promote(c))
+        p = e_area2([a, b, promote(c)])
         i = 2
         while (i > 0 and p[i] == 0): i -= 1;
         return p[i] > 0
@@ -50,10 +49,10 @@ def in_circle(a, b, c):
     c = promote(c)
 
     def inner(d):
-        p = e_volume(a, b, c, promote(d))
+        p = e_incircle6([a, b, c, promote(d)])
         i = 4;
         while (i > 0 and p[i] == 0): i -= 1
-        return p[i] < 0
+        return p[i] > 0
 
     return inner
 
@@ -70,6 +69,9 @@ class Triangle:
                 return False
         return True
 
+    def fix_adjacent(self, old, new):
+        self.A[self.A.index(old)] = new
+
     def __str__(self):
         return ' '.join(str(p) for p in self.P)
 
@@ -77,26 +79,56 @@ class DAG:
     def leaf(T):
         return T.C is None
 
-    def interior_split(T, p):
-        ans = []
-        aux = [p, T.P[1], T.P[2]]
-        for i in range(3):
-            ans.append(Triangle(aux[0], aux[1], aux[2]))
-            if i + 1 < 3:
-                aux[i] = T.P[i]
-                aux[i + 1] = p
+    def flip_edge(T, i, U, j):
+        assert DAG.leaf(T)
+        assert DAG.leaf(U)
+        assert T.P[i - 1] == U.P[j - 2]
+        assert U.P[j - 1] == T.P[i - 2]
 
-        aux = [T.A[0], ans[1], ans[2]]
-        for i in range(3):
-            ans[i].A = aux.copy()
-            if T.A[i] is not None:
-                assert DAG.leaf(T.A[i])
-                T.A[i].A[T.A[i].A.index(T)] = ans[i]
-            if i + 1 < 3:
-                aux[i] = ans[i]
-                aux[i + 1] = T.A[i + 1]
+        ans = [Triangle(U.P[j], T.P[i], T.P[i - 2]),
+               Triangle(T.P[i], U.P[j], U.P[j - 2])]
+        ans[0].A = [T.A[i - 1], U.A[j - 2], ans[1]]
+        ans[1].A = [U.A[j - 1], T.A[i - 2], ans[0]]
+
+        T.A[i - 1].fix_adjacent(T, ans[0])
+        T.A[i - 2].fix_adjacent(T, ans[1])
+        U.A[j - 1].fix_adjacent(U, ans[1])
+        U.A[j - 2].fix_adjacent(U, ans[0])
 
         T.C = ans
+        U.C = ans
+
+        for k in range(3):
+            DAG.fix_edge(ans[0], k)
+            DAG.fix_edge(ans[1], k)
+
+    def fix_edge(T, i):
+        if T.A[i] is None: return
+
+        U = T.A[i]
+        j = U.A.index(T)
+
+        if not in_circle(T.P[0], T.P[1], T.P[2])(U.P[j]):
+            return
+
+        DAG.flip_edge(T, i, U, j)
+
+    def interior_split(T, p):
+        ans = [Triangle(p, T.P[1], T.P[2]),
+               Triangle(T.P[0], p, T.P[2]),
+               Triangle(T.P[0], T.P[1], p)]
+
+        ans[0].A = [T.A[0], ans[1], ans[2]]
+        ans[1].A = [ans[0], T.A[1], ans[2]]
+        ans[2].A = [ans[0], ans[1], T.A[2]]
+
+        for i in range(3):
+            if T.A[i] is not None:
+                T.A[i].fix_adjacent(T, ans[i])
+
+        T.C = ans
+        for i in range(3):
+            DAG.fix_edge(T.C[i], i)
 
     def edge_split(T, i, U, j, p):
         pass
