@@ -5,6 +5,28 @@ Epoint = namedtuple('EPoint', 'inf inner')
 def area2(a, b):
     return a.x * b.y - a.y * b.x
 
+def norm(a):
+    return a.x * a.x + a.y * a.y
+
+def e_area(a, b, c):
+    p = [0] * 3
+    points = [a, b, c]
+    for i in range(3):
+        rank = points[i - 1].inf + points[i].inf
+        p[rank] += area2(points[i - 1].inner, points[i].inner)
+    return p
+
+def e_volume(a, b, c, d):
+    Q = [a, b, c, d]
+    p = [0] * 5
+    sgn = 1;
+    for i in range(4):
+        aux = [Q[k] for k in range(4) if k != i]
+        for j, val in enumerate(e_area(Q[0], Q[1], Q[2])):
+            p[2 * Q[i].inf + j] += sgn * norm(Q[i].inner) * val 
+        sgn *= -1
+    return p
+
 def promote(p, inf = False):
     if not isinstance(p, Epoint):
         return Epoint(inf, p)
@@ -15,15 +37,23 @@ def left(a, b):
     b = promote(b)
 
     def inner(c):
-        c = promote(c)
-        p = [0, 0, 0]
-        points = [a, b, c]
-        for i in range(3):
-            rank = points[i - 1].inf + points[i].inf
-            p[rank] += area2(points[i - 1].inner, points[i].inner)
+        p = e_area(a, b, promote(c))
         i = 2
         while (i > 0 and p[i] == 0): i -= 1;
-        return p[i] > 0;
+        return p[i] > 0
+
+    return inner
+
+def in_circle(a, b, c):
+    a = promote(a)
+    b = promote(b)
+    c = promote(c)
+
+    def inner(d):
+        p = e_volume(a, b, c, promote(d))
+        i = 4;
+        while (i > 0 and p[i] == 0): i -= 1
+        return p[i] < 0
 
     return inner
 
