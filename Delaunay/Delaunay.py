@@ -99,9 +99,8 @@ class DAG:
         T.C = ans
         U.C = ans
 
-        for k in range(3):
-            DAG.fix_edge(ans[0], k)
-            DAG.fix_edge(ans[1], k)
+        DAG.fix_edge(ans[0], 1)
+        DAG.fix_edge(ans[1], 0)
 
     def fix_edge(T, i):
         if T.A[i] is None: return
