@@ -131,7 +131,20 @@ class DAG:
             DAG.fix_edge(T.C[i], i)
 
     def edge_split(T, i, U, j, p):
-        pass
+        T.C = [Triangle(T.P[i - 1], T.P[i], p),
+               Triangle(p, T.P[i], T.P[i - 2])]
+        U.C = [Triangle(p, U.P[j], U.P[j - 2]),
+               Triangle(U.P[j - 1], U.P[j], p)]
+
+        T.C[0].A = [T.C[1], U.C[0], T.A[i - 2]]
+        T.C[1].A = [T.A[i - 1], U.C[1], T.C[0]]
+        U.C[0].A = [U.A[j - 1], T.C[0], U.C[1]]
+        U.C[1].A = [U.C[0], T.C[1], U.A[j - 2]]
+
+        T.A[i - 2].fix_adjacent(T, T.C[0])
+        T.A[i - 1].fix_adjacent(T, T.C[1])
+        U.A[j - 2].fix_adjacent(U, U.C[1])
+        U.A[j - 1].fix_adjacent(U, U.C[0])
 
     def split_triangle(T, p):
         assert DAG.leaf(T)
