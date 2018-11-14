@@ -154,10 +154,23 @@ class DAG:
                 return
         DAG.interior_split(T, p)
 
+    def dfs(T, out, seen = None):
+        if seen is None:
+            seen = set()
+        seen.add(T)
+
+        if DAG.leaf(T) and sum(p.inf for p in T.P) == 0:
+            out.append(T)
+        elif not DAG.leaf(T):
+            for V in T.C:
+                if V is not None and V not in seen:
+                    DAG.dfs(V, out, seen)
+
     def __init__(self):
         self.root = Triangle(promote(Point(-1, -1), True),
                              promote(Point(1, -1), True),
                              promote(Point(0, 1), True))
+        self.tri = []
 
     def find(self, p):
         ans = self.root
@@ -167,3 +180,7 @@ class DAG:
 
     def insert(self, p):
         DAG.split_triangle(self.find(p), promote(p))
+
+    def __iter__(self):
+        DAG.dfs(self.root, self.tri)
+        return ((p.inner for p in T.P) for T in self.tri)
