@@ -69,8 +69,9 @@ class Triangle:
                 return False
         return True
 
-    def fix_adjacent(self, old, new):
-        self.A[self.A.index(old)] = new
+    def fix_adjacent(T, i, new):
+        if T.A[i] is not None:
+            T.A[i].A[T.A[i].A.index(T)] = new
 
     def __str__(self):
         return ' '.join(str(p) for p in self.P)
@@ -90,10 +91,10 @@ class DAG:
         ans[0].A = [T.A[i - 1], U.A[j - 2], ans[1]]
         ans[1].A = [U.A[j - 1], T.A[i - 2], ans[0]]
 
-        T.A[i - 1].fix_adjacent(T, ans[0])
-        T.A[i - 2].fix_adjacent(T, ans[1])
-        U.A[j - 1].fix_adjacent(U, ans[1])
-        U.A[j - 2].fix_adjacent(U, ans[0])
+        Triangle.fix_adjacent(T, i - 1, ans[0])
+        Triangle.fix_adjacent(T, i - 2, ans[1])
+        Triangle.fix_adjacent(U, j - 1, ans[1])
+        Triangle.fix_adjacent(U, j - 2, ans[0])
 
         T.C = ans
         U.C = ans
@@ -123,8 +124,7 @@ class DAG:
         ans[2].A = [ans[0], ans[1], T.A[2]]
 
         for i in range(3):
-            if T.A[i] is not None:
-                T.A[i].fix_adjacent(T, ans[i])
+            Triangle.fix_adjacent(T, i, ans[i])
 
         T.C = ans
         for i in range(3):
@@ -141,10 +141,10 @@ class DAG:
         U.C[0].A = [U.A[j - 1], T.C[0], U.C[1]]
         U.C[1].A = [U.C[0], T.C[1], U.A[j - 2]]
 
-        T.A[i - 2].fix_adjacent(T, T.C[0])
-        T.A[i - 1].fix_adjacent(T, T.C[1])
-        U.A[j - 2].fix_adjacent(U, U.C[1])
-        U.A[j - 1].fix_adjacent(U, U.C[0])
+        Triangle.fix_adjacent(T, i - 2, T.C[0])
+        Triangle.fix_adjacent(T, i - 1, T.C[1])
+        Triangle.fix_adjacent(U, j - 2, U.C[1])
+        Triangle.fix_adjacent(U, j - 1, U.C[0])
 
     def split_triangle(T, p):
         assert DAG.leaf(T)
