@@ -166,4 +166,4 @@ class DAG:
         return ans
 
     def insert(self, p):
-        DAG.split_triangle(self.find(p), p)
+        DAG.split_triangle(self.find(p), promote(p))
