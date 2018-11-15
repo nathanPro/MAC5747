@@ -145,6 +145,11 @@ class DAG:
         Triangle.fix_adjacent(U, j - 2, U.C[1])
         Triangle.fix_adjacent(U, j - 1, U.C[0])
 
+        DAG.fix_edge(T.C[0], 2)
+        DAG.fix_edge(T.C[1], 0)
+        DAG.fix_edge(U.C[0], 0)
+        DAG.fix_edge(U.C[1], 2)
+
     def split_triangle(T, p):
         assert DAG.leaf(T)
         for i, U in enumerate(T.A):
