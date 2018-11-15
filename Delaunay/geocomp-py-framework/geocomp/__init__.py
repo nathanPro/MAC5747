@@ -12,6 +12,7 @@ Sub-modulos:
 
 from . import convexhull
 from . import farthest
+from . import delaunay
 from .common.guicontrol import init_display
 from .common.guicontrol import config_canvas
 from .common.guicontrol import run_algorithm
@@ -20,7 +21,8 @@ from .common.prim import get_count
 from .common.prim import reset_count
 
 children = (   ( 'convexhull', None, 'Fecho Convexo' ),
-		( 'farthest',  None, 'Par Mais Distante' )
+		( 'farthest',  None, 'Par Mais Distante' ),
+		( 'delaunay',  None, 'Triangulação de Delaunay' )
 	)
 
 __all__ = [p[0] for p in children]
