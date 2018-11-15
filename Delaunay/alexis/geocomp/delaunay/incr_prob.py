@@ -1,5 +1,12 @@
+import random
+import copy
+from geocomp.common.guiprim import triang
 from collections import namedtuple
-Point = namedtuple('Point', 'x y')
+from geocomp.common.polygon import Polygon
+from geocomp.common import control
+from geocomp.common.point import Point
+
+# Point = namedtuple('Point', 'x y')
 Epoint = namedtuple('EPoint', 'inf inner')
 
 def area2(a, b):
@@ -61,9 +68,16 @@ class Triangle:
         self.P = [a, b, c]
         self.A = [None, None, None]
         self.C = None
+        self.rank = sum(p.inf for p in self.P)
+        self.drawing = Polygon(list(p.inner for p in self.P))
+        if self.rank == 0:
+            self.drawing.plot()
         assert left(a, b)(c)
 
     def contains(self, q):
+        if self.rank == 0:
+            triang(self.P[0].inner, self.P[1].inner, self.P[2].inner)
+
         for i in range(3):
             if left(self.P[i], self.P[i - 1])(q):
                 return False
@@ -188,3 +202,17 @@ class DAG:
     def __iter__(self):
         DAG.dfs(self.root, self.tri)
         return ((p.inner for p in T.P) for T in self.tri)
+
+def IncrProb(l):
+    for i in range(len(l)):
+        j = random.randrange(0, i + 1)
+        aux = l[i]
+        l[i] = l[j]
+        l[j] = aux
+
+    dag = DAG()
+    for pt in l:
+        pt.hilight()
+        control.sleep()
+        dag.insert(pt)
+        pt.unhilight()
