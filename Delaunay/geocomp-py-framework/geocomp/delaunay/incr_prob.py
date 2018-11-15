@@ -69,10 +69,26 @@ class Triangle:
         self.A = [None, None, None]
         self.C = None
         self.rank = sum(p.inf for p in self.P)
-        self.drawing = Polygon(list(p.inner for p in self.P))
-        if self.rank == 0:
-            self.drawing.plot()
+        self.drawing = None
+        self.plot()
         assert left(a, b)(c)
+
+    def plot(self):
+        if self.rank != 0:
+            return
+        self.drawing = []
+        for i in range(3):
+            self.drawing.append(
+                self.P[i - 1].inner.lineto(self.P[i].inner))
+        control.thaw_update()
+        control.update()
+        control.freeze_update()
+
+    def hide(self):
+        if self.drawing is None:
+            return
+        for i, _id in enumerate(self.drawing):
+            self.P[i - 1].inner.remove_lineto(self.P[i].inner, _id)
 
     def contains(self, q):
         if self.rank == 0:
@@ -112,6 +128,8 @@ class DAG:
 
         T.C = ans
         U.C = ans
+        T.hide()
+        U.hide()
 
         DAG.fix_edge(ans[0], 1)
         DAG.fix_edge(ans[1], 0)
@@ -140,6 +158,7 @@ class DAG:
             Triangle.fix_adjacent(T, i, ans[i])
 
         T.C = ans
+        T.hide()
         for i in range(3):
             DAG.fix_edge(T.C[i], i)
 
@@ -163,6 +182,9 @@ class DAG:
         DAG.fix_edge(T.C[1], 0)
         DAG.fix_edge(U.C[0], 0)
         DAG.fix_edge(U.C[1], 2)
+
+        T.hide()
+        U.hide()
 
     def split_triangle(T, p):
         assert DAG.leaf(T)
