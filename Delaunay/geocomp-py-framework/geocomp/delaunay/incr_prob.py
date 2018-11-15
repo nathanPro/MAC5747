@@ -15,6 +15,13 @@ def area2(a, b):
 def norm(a):
     return a.x * a.x + a.y * a.y
 
+def dist(a, b):
+    if a.inf != b.inf:
+        return 42
+    a = a.inner
+    b = b.inner
+    return norm(Point(a.x - b.x, a.y - b.y))
+
 def e_area2(points):
     p = [0] * 3
     for i in range(3):
@@ -219,7 +226,11 @@ class DAG:
         return ans
 
     def insert(self, p):
-        DAG.split_triangle(self.find(p), promote(p))
+        pos = self.find(p)
+        p = promote(p)
+        if min([dist(p, q) for q in pos.P]) == 0:
+            return
+        DAG.split_triangle(pos, p)
 
     def __iter__(self):
         DAG.dfs(self.root, self.tri)
