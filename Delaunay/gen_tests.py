@@ -1,7 +1,7 @@
 import random
 
-LO = -1_000_000
-HI = 1_000_000
+LO = -1_000_000_000
+HI = 1_000_000_000
 
 def gen_cood():
     return random.randint(LO, HI)
