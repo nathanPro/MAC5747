@@ -242,7 +242,9 @@ def IncrProb(l):
         aux = l[i]
         l[i] = l[j]
         l[j] = aux
+    Incr(l)
 
+def Incr(l):
     dag = DAG()
     for pt in l:
         pt.hilight()
