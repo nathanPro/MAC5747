@@ -6,11 +6,11 @@ from . import prim
 from geocomp import config
 
 
-def triang (a, b, c):
+def triang (a, b, c, color = config.COLOR_PRIM):
 	"desenha  (e apaga) os lados do triangulo abc"
-	a.lineto (c, config.COLOR_PRIM)
-	b.lineto (a, config.COLOR_PRIM)
-	c.lineto (b, config.COLOR_PRIM)
+	a.lineto (c, color)
+	b.lineto (a, color)
+	c.lineto (b, color)
 	control.thaw_update ()
 	control.update ()
 	control.freeze_update ()
