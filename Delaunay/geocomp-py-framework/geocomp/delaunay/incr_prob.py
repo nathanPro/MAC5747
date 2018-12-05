@@ -2,6 +2,7 @@ import random
 from collections import namedtuple
 from geocomp import config
 from geocomp.common.guiprim import triang
+from geocomp.common.prim import count_area2
 from geocomp.common.polygon import Polygon
 from geocomp.common import control
 from geocomp.common.point import Point
@@ -140,6 +141,7 @@ class DAG:
         return T.C is None
 
     def flip_edge(T, i, U, j):
+        count_area2()
         assert DAG.leaf(T)
         assert DAG.leaf(U)
         assert T.P[i - 1] == U.P[j - 2]

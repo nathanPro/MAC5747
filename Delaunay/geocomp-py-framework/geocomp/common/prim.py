@@ -13,6 +13,10 @@ num_area2 = 0
 # Numero de vezes que a funcao dist2 foi chamada
 num_dist = 0
 
+def count_area2():
+    global num_area2
+    num_area2 = num_area2 + 1
+
 def area2 (a, b, c):
 	"Retorna duas vezes a rea do tringulo determinado por a, b, c"
 	global num_area2
