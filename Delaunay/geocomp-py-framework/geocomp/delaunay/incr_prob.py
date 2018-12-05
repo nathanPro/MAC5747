@@ -1,8 +1,7 @@
 import random
-import copy
+from collections import namedtuple
 from geocomp import config
 from geocomp.common.guiprim import triang
-from collections import namedtuple
 from geocomp.common.polygon import Polygon
 from geocomp.common import control
 from geocomp.common.point import Point
@@ -28,9 +27,21 @@ def e_triang(p, q, r, color = config.COLOR_PRIM):
         return
     triang(p.inner, q.inner, r.inner, color)
 
+def e_lineto(p, q, color = config.COLOR_PRIM):
+    if max(p.inf, q.inf) > 0:
+        return
+    keep = p.inner.lineto(q.inner, color)
+
+    control.thaw_update()
+    control.update()
+    control.freeze_update()
+    control.sleep()
+
+    p.inner.remove_lineto(q, keep)
+
 COLOR_TRIANG   = '#ff4e00'
 COLOR_CONTAINS = '#437f97'
-COLOR_IN_CIRC  = '#f2af29'
+COLOR_TEST     = '#f2af29'
 COLOR_GOOD     = '#00FF00'
 COLOR_BAD      = '#FF0000'
 
@@ -44,7 +55,6 @@ def e_area2(points):
 def e_incircle6(Q):
     p = [0] * 5
     sgn = 1;
-    e_triang(Q[0], Q[1], Q[2], COLOR_IN_CIRC)
     for i in range(4):
         coef = sgn * norm(Q[i].inner)
         disp = 2 * Q[i].inf
@@ -156,14 +166,18 @@ class DAG:
     def fix_edge(T, i):
         if T.A[i] is None: return
 
+
         U = T.A[i]
         j = U.A.index(T)
 
+        a, b = T.P[i - 2], T.P[i - 1]
+
+        e_lineto(a, b, COLOR_TEST)
         if not in_circle(T.P[0], T.P[1], T.P[2])(U.P[j]):
-            e_triang(T.P[0], T.P[1], T.P[2], COLOR_GOOD)
+            e_lineto(a, b, COLOR_GOOD)
             return
         else:
-            e_triang(T.P[0], T.P[1], T.P[2], COLOR_BAD)
+            e_lineto(a, b, COLOR_BAD)
 
         DAG.flip_edge(T, i, U, j)
 
