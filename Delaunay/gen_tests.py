@@ -1,12 +1,10 @@
-import random
+import numpy as np
 
-LO = -1_000_000_000
-HI = 1_000_000_000
-
-def gen_cood():
-    return random.randint(LO, HI)
-
+m = int(input())
 n = int(input())
-print(n)
+for i in range(m):
+    alpha = (i / m) * np.pi + .5 * np.pi
+    print(np.cos(alpha), np.sin(alpha))
+
 for i in range(n):
-    print(gen_cood(), gen_cood())
+    print(1 * (n - i)/n, 0)
