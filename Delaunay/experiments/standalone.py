@@ -1,5 +1,8 @@
 import random
 from collections import namedtuple
+import sys
+
+sys.setrecursionlimit(4 * sys.getrecursionlimit())
 
 Point = namedtuple('Point', 'x y')
 Epoint = namedtuple('EPoint', 'inf inner')
