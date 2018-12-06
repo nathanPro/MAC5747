@@ -13,28 +13,32 @@
 \usepackage{lmodern}
 \usepackage{suffix}
 \usepackage{notation}
+\usepackage{biblatex}
+\addbibresource{refs.bib}
+\usepackage{graphicx}
+\graphicspath{ {./images/} }
 
 \title{Triangulação de Delaunay}
 \author{Nathan Benedetto Proença}
-\date{7 de agosto de 2017}
+\date{6 de dezembro de 2018}
 
 \begin{document}
 \maketitle
 \section{O Algoritmo}
 
-O algoritmo implementado é o descrito no capítulo 9 do livro dos holandeses,
-e que foi discutido em aula. Isso facilitou muito a implementação, por me dar
+O algoritmo implementado é o descrito no capítulo 9 de \cite{DeBerg},
+e foi discutido em aula. Isso facilitou muito a implementação, por me dar
 uma descrição clara da visão geral do que é feito.
 
 A principal ideia é fazer uma construção incremental, que mantém triangulações
 parciais. Para cada novo ponto, é necessário encontrar qual triângulo o contém
-e subdividí-lo. Além disso, é necessário ``flipar'' as arestas que deixam de
+e subdividí-lo. Além disso, é necessário inverter as arestas que deixam de
 pertencer à triangulação. Uma análise probabilística permite concluir que
 este algoritmo tem complexidade esperada $O(n\lg n)$, e que o consumo de tempo
 é dominado pelo problema de localização na estrutura de dados.
 
-A estrutura de dados que mantive é um DAG, onde cada nó é um triângulo de
-alguma triangulação parcial que construi. Mantive dois invariantes:
+A estrutura de dados é um DAG, onde cada nó é um triângulo de alguma
+triangulação parcial que construi. Mantive dois invariantes:
 
 \begin{enumerate}
     \item Um triângulo está na triangulação atual se e somente se ele
@@ -47,8 +51,8 @@ Assim, a busca se torna extremamente simples. Começando da raíz do DAG,
 enquanto eu estiver num nó que tem filhos, eu avanço para o primeiro nó
 que contém o ponto que estou procurando. Note que a busca \emph{não trata
 nenhum caso especial}. Ela retorna algum triângulo da triangulação atual
-que contém o vértice atual. Decidi implementar desta maneira para diminuir
-o trabalho na parte do algoritmo que eu sei que domina a complexidade.
+que contém o vértice. Esta decisão de implementação é interessante
+por diminuir o trabalho na parte do algoritmo que domina a complexidade.
 
 Infelizmente isto não foi o bastante para tornar meu algoritmo eficiente,
 pois acabei esbarrando em outro gargalo na implementação.
@@ -57,107 +61,136 @@ De qualquer maneira, com um triângulo que contém o ponto, posso checar
 se ele já é um dos vértices, se ele está em alguma aresta, ou se ele
 está no interior do triângulo. Tratei cada caso separado.
 
-Tive duas dificuldades na implementação: uma teórica e uma prática. A
-implementação descrita supõe que existem \emph{pontos no infinito}, sem
-definir precisamente como manipulà-los. A outra dificuldade foi em manter
-para todos os triângulos quais faces eram adjacentes à eles.
-
 \section{Pontos no infinito}
 
-Resolvi abordar a forma de representar pontos no infinito de uma maneira
-mais teórica, começando com como definir o que eu queria dizer com
-``pontos no infinito''.
-
-Senti essa necessidade para evitar a abordagem ``chutar um valor grande o
-suficiente''. Tenho dois problemas com esta forma de resolver a questão:
-ela não é robusta, e piora minha situação numericamente.
+Abordei a forma de representar pontos no infinito de uma maneira mais
+teórica, começando com como definir o que eu queria dizer com ``pontos
+no infinito''.
 
 A posição dos pontos é vital para as decisões tomadas pelo algoritmo,
 principalmente na escolha de quais arestas devem ser invertidas. Não basta
 ter 3 pontos fora do fecho convexo da entrada, e tampouco parece ser o
 bastante ter um triângulo que contenha o fecho convexo da entrada.
-Resolvi modificar a representação dos pontos, e não calcular o quão grande
-deveriam ser as coordenadas para não interferir na resposta.
+Por isso, apenas dilatar os pontos por alguma constante específica me
+pareceu uma forma ruim de resolver o problema.
 
-Além disso, escolher um valor muito grande \emph{me cria problemas numéricos}.
-Encontrei na Wikipedia a referência para um paper do Guibas e do Stolfi que
-mostrava como fazer o teste de pertencimento de um ponto ao círculo definido por
-3 pontos através de um determinante. Com isso, consigo implementar meu projeto
-sem aritmética de ponto flutuante. Por trabalhar em Python, estou já com
-números inteiros de preciso arbitrária. Logo, dilatar os pontos por uma
-constante desnecessariamente grande torna os números que estou trabalhando
-maiores e prejudica minha eficiência de maneira desnecessária.
+O paper \cite{guibas1985} descreve diversas primitivas que podem ser utilizadas
+para se calcular diagramas de Voronoi. Entre estas, ele demonstra que o teste
+de pertencimento de um ponto ao círculo determinado por outros três pontos pode
+ser feito ao se analisar o sinal de um determinante. O outro teste que precisava
+fazer também envolve analisar o sinal de um determinante --- o teste de
+\texttt{Esquerda}.
 
-Logo, como representei os pontos? Seja $\alpha$ um número real positivo,
-e seja $u$ um ponto no plano. O ponto $\alpha \cdot u$ é o mesmo ponto dilatado
-a partir da origem. Se interpretar um ponto no infinito como \emph{comportamento
-de $\alpha \cdot u$ para $\alpha$ suficientemente grande}, consigo implementar
-minhas primitivas de maneira apropriada.
+Para efetuar os cálculos, eu \emph{parametrizei os determinantes com respeito
+a uma constante de dilatação}.  Seja $\alpha$ um número real positivo, e seja
+$u$ um ponto no plano. O ponto $\alpha u$ é o mesmo ponto dilatado a partir da
+origem.  Se interpretar um ponto no infinito como \emph{comportamento de $\alpha u$
+para $\alpha$ suficientemente grande}, consigo implementar minhas primitivas
+de maneira apropriada.
 
-Por exemplo, seja $\alpha$ um real positivo, e $u, v$ e $w$ pontos no plano.
-Irei primeiro deduzir o teste de esquerda. Note que, se denotarmos
+Seja $\alpha$ um real positivo, e $a, b$ e $c$ pontos no plano. Denotando
 $a \wedge b \coloneqq \texttt{area2}(a, b)$, temos que
-
 \[\texttt{Esquerda}^+(a,b,c) \iff (b - a) \wedge (c - a) > 0.\]
-
 Mais ainda, note que como $a \wedge a = 0$ para todo $a$, temos também
 que $a \wedge b = - b \wedge a$. Assim, podemos concluir que
-
 \[(b - a) \wedge (c - a) = a \wedge b + b \wedge c + c \wedge a.\]
-
-Aqui o problema se resolve: Note que $a \wedge b$ é um determinante. Como
-quero tratar os pontos de maneira uniforme, posso ter todos os 4 casos onde
-$a$ ou $b$ são ou não pontos no infinito. Contudo, em todos os casos,
-posso tratar \emph{a fórmula resultante como um polinômio em $\alpha$}.
-
+Como $a \wedge b$ é um determinante, posso calcular o valor deste em função
+de $\alpha$. Mais ainda, a função será um polinômio em $\alpha$.
 Se, por exemplo, $a$ é um ponto no infinito, podemos escrever $a = \alpha \bar{a}$,
 e afirmar que
-\[a \wedge b = (\alpha \bar{a}) \wedge b = \alpha \bar{a} \wedge b.\]
+\[a \wedge b = (\alpha \bar{a}) \wedge b = \alpha (\bar{a} \wedge b).\]
 Logo, o termo $a \wedge b$ soma $(\bar{a} \wedge b)$ no coeficiente de $\alpha^1$
-no polinômio resultante. Se, além de $a$, $b$ também é um ponto no infinito, temos que
-$b = \alpha \bar{b}$. Neste caso, o termo $a \wedge b$ contribui $\bar{a} \wedge \bar{b}$
-para o coeficiente de $\alpha^2$.
+no polinômio resultante. Se $b$ também é um ponto no infinito, podemos escrever
+$b = \alpha \bar{b}$. Neste caso, concluimos que o termo $a \wedge b$ contribui
+$\bar{a} \wedge \bar{b}$ para o coeficiente de $\alpha^2$.
 
-Logo, podemos calcular este polinômio em $\alpha$. Como queremos apenas obter
-o sinal da expressão para um $\alpha$ suficientemente grande, basta devolver
-o sinal \emph{do coeficiente não nulo da maior potência}.
+Assim, observando quais pontos são dilatados por $\alpha$, consigo calcular
+o polinômio em $\alpha$ definido por $(b - a) \wedge (c - a)$.  Como queremos
+apenas obter o sinal da expressão para um $\alpha$ suficientemente grande,
+basta devolver o sinal \emph{do coeficiente não nulo da maior potência}.
 
-Como o teste de pertencimento do ponto ao círculo também é um determinante,
-o mesmo argumento pode ser feito. De fato, no código, minha função $\texttt{e\_in\_circle6}$
-chama 4 vezes a função $\texttt{e\_area2}$, para depois apenas devolver o
-sinal do coeficiente não nulo da maior potência.
+Implementei esta solução para ambas as primitivas, tanto o teste de esquerda
+quanto o de pertencimento ao círculo.  De fato, no código, minha função
+$\texttt{e\_in\_circle6}$ chama a função $\texttt{e\_area2}$, e calcula
+o polinômio relevante.
 
-Como os determinantes que estou trabalhando tem ordem pequena, os polinômios
-tem tamanho constante --- no máximo grau $4$. Apesar disso, creio que esta
-abordagem é o grande gargalo da minha implementação. Se as coordenadas da
-entrada atingem um valor $C$, as contas que faço para testar envolvem grandezas
-da ordem $C^4$. Logo, se minha entrada tiver coordenadas maiores do que
-$2^{16} = 65536$, meu algoritmo precisa de mais do que 64 bits para representar
-as grandezas com que opera. Logo, se tiver coordenadas com valor absoluto maior do que
-$7 \cdot 10^4$, meu algoritmo necessariamente precisa utilizar precisão arbitrária,
-o que o torna bem menos eficiente.
+Uma consequência positiva desta abordagem é que \emph{se a entrada é
+dada por números inteiros, minha implementação trabalha apenas com
+aritmética inteira}. Ou seja,posso garantir que os cálculos estão corretos,
+e que não há erros de precisão.
 
-Contudo, posso garantir que os cálculos estão corretos, e que não há erros
-de precisão.
+Contudo, as contas no caso de entrada inteira são extremamente custosas. Se
+o valor absoluto das coordenadas da entrada atingem um valor $C$, as contas
+envolvem grandezas da ordem $C^4$. Logo, se a entrada tiver coordenadas
+maiores do que $2^{16} = 65536$, o algoritmo precisa de mais do que 64
+bits para representar as grandezas com que opera. Logo, para entradas deste
+tipo a implementação começa a trabalhar com precisão arbitrária, o que a
+impacta bastante o tempo de execução. Dos testes que fiz, utilizar precisão
+arbitrária ao invés de ponto flutuante torna o algoritmo 3 vezes mais custoso.
 
 \section{Animação}
 
-Animei dois aspectos do algoritmo, ambos relacionados à estrutura de dados. O primeiro,
+Animei três aspectos do algoritmo, todos relacionados à estrutura de dados. O primeiro,
 mais direto, é de representar a solução parcial que tenho, garantindo que os triângulos
 que estão na minha solução aparecem na figura. A segunda é mostrar os triângulos que
 considero na parte de localização, para animar o aspecto mais ``local'' do algoritmo.
+Além disso, toda aresta cuja legalidade é testada é colorida de amarelo. Se ela é legal,
+a torno verde antes de prosseguir com o algoritmo. Se não, a torno vermelha, e faço
+a inversão.
 
-Estas duas abordagens simples ressaltam dois aspectos interessantes do algoritmo.
-O primeiro é de mostrar a solução parcial e seu desenvolvimento no decorrer do
-algoritmo, e a segunda é ressaltar o quanto de tempo é investido na parte de
-localização do ponto na triangulação.
+Isto ressalta os aspectos interessantes do funcionamento do algoritmo. Um, o
+processo de localização do ponto, e depois o trabalho necessário para corrigir a
+triangulação.
 
 \section{Eficiência}
 
-Para ter noção do funcionamento do meu algoritmo, o comparei à uma implementação
-da triangulação de Delaunay disponível no pacote Scipy. Testando com potências de
-dois, fui consistentemente 360 vezes mais devagar do que a implementação deles em
-entradas geradas aleatoriamente. Imagino que, destes 360, 20 sejam por estar
-trabalhando com Python em si, o que me faz ter listas ligadas e tabelas de hash
-em momentos onde eu teria um vetor em C. Já o fator multiplicativo de 18
+Para justificar a implementação probabilística, contabilizei quantas arestas eram
+invertidas. Apesar de não ser o gargalo do algoritmo, que é a busca na estrutura
+de dados, ao construir um caso onde são necessárias $\Omega(n^2)$ inversões já
+torno evidente a vantagem da aleatorização. Criei um caso onde o algoritmo
+determinístico tem comportamento quadrático, e rodei meus testes nele.
+Estes casos podem ser visualizados ao se abrir as entradas da forma
+\texttt{bad\_incr\_}.
+
+\begin{figure}[h]
+    \centering
+    \caption{Algoritmo probabilístico no caso construído.}
+    \includegraphics[width=0.8\textwidth]{flips_boxplot.png}
+    \label{fig:boxplot}
+\end{figure}
+
+\begin{figure}[h]
+    \centering
+    \caption{Quantidade linear de inversões no algoritmo probabilístico.}
+    \includegraphics[width=0.8\textwidth]{linear_flips.png}
+    \label{fig:linear_flips}
+\end{figure}
+
+Para cada potência de 2 entre 16 e 1024, executei o algoritmo 256 vezes e contabilizei
+as inversões de arestas que foram feitas. Com estes dados, construí o boxplot 
+\ref{fig:boxplot}, que evidencia que a média de inversões está bem perto de $2n$.
+Este comportamento fica ainda mais evidente na figura \ref{fig:linear_flips}, onde
+além dos pontos encontrados, temos as retas $y = x/2$, $y = 2x$ e $y = 4x$.
+
+O livro limita a quantidade média de \emph{triângulos criados em cada iteração do algoritmo}
+por $9$. Ao ser inserido, cada ponto cria 3 triângulos, e mais um para cada aresta que é
+invertida. Logo, nos experimentos que fiz, observei em média $5$ triângulos criados em
+cada iteração do algoritmo. Isso sugere que talvez exista uma análise mais limpa do que a
+feita no livro. A figura \ref{fig:linear_flips} também passa a impressão de que a variância
+da quantidade de inversões cresce linearmente com o tamanho da entrada.
+
+\begin{figure}[h]
+    \centering
+    \caption{Algoritmo determinístico.}
+    \includegraphics[width=0.8\textwidth]{worstcase.png}
+    \label{fig:quadratic}
+\end{figure}
+
+Além disso, evidencio que o algoritmo incremental determinístico é de fato quadrático
+na entrada construída. Para evidenciar o comportamento quadrático, a imagem na figura
+\ref{fig:quadratic} acompanha a curva $y = x^2/4$ em azul, além do tempo de execução
+nos casos construídos, em laranja.
+
+\printbibliography
+
 \end{document}
