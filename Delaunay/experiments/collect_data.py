@@ -1,5 +1,4 @@
 import time
-import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from standalone import *
@@ -57,4 +56,4 @@ for cat in range(categories):
             print(me)
 
 d = pd.DataFrame({'flips' : flip_cnt, 'time' : rel_time, 'size' : inp_size})
-print(d.to_csv())
+d.to_csv('data.csv')
