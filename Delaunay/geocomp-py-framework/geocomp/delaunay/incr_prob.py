@@ -7,7 +7,6 @@ from geocomp.common.polygon import Polygon
 from geocomp.common import control
 from geocomp.common.point import Point
 
-# Point = namedtuple('Point', 'x y')
 Epoint = namedtuple('EPoint', 'inf inner')
 
 def area2(a, b):
@@ -232,23 +231,24 @@ class DAG:
                 return
         DAG.interior_split(T, p)
 
-    def dfs(T, out, seen = None):
-        if seen is None:
-            seen = set()
+    def dfs(T, seen):
         seen.add(T)
 
+        out = set()
         if DAG.leaf(T) and sum(p.inf for p in T.P) == 0:
-            out.append(T)
+            for p in T.P:
+                out.add((p.inner, T))
         elif not DAG.leaf(T):
             for V in T.C:
                 if V is not None and V not in seen:
-                    DAG.dfs(V, out, seen)
+                    out |= DAG.dfs(V, seen)
+        return out
 
     def __init__(self):
         self.root = Triangle(promote(Point(-1, -1), True),
                              promote(Point(1, -1), True),
                              promote(Point(0, 1), True))
-        self.tri = []
+        self.pts_and_ts = None
 
     def find(self, p):
         ans = self.root
@@ -264,8 +264,30 @@ class DAG:
         DAG.split_triangle(pos, p)
 
     def __iter__(self):
-        DAG.dfs(self.root, self.tri)
-        return ((p.inner for p in T.P) for T in self.tri)
+        if self.pts_and_ts is None:
+            seen = set()
+            self.pts_and_ts = DAG.dfs(self.root, seen)
+        return (pair for pair in self.pts_and_ts)
+
+    def to_graph(dag):
+        V = {}
+        for p, T in dag:
+            V[p] = []
+
+            pp = promote(p)
+            i = T.P.index(pp)
+            U = T.A[i - 1]
+
+            while U != T:
+                i = U.P.index(pp)
+                if U.P[i - 2].inf is False:
+                    V[p].append(U.P[i - 2].inner)
+                U = U.A[i - 1]
+            i = U.P.index(pp)
+            if U.P[i - 2].inf is False:
+                V[p].append(U.P[i - 2].inner)
+        return V
+
 
 def IncrProb(l):
     for i in range(len(l)):
@@ -273,7 +295,7 @@ def IncrProb(l):
         aux = l[i]
         l[i] = l[j]
         l[j] = aux
-    Incr(l)
+    return Incr(l)
 
 def Incr(l):
     dag = DAG()
@@ -282,3 +304,5 @@ def Incr(l):
         control.sleep()
         dag.insert(pt)
         pt.unhilight()
+    print(DAG.to_graph(dag))
+    return dag
